@@ -1,80 +1,52 @@
-const axios = require("axios");
-const FormData = require("form-data");
-const { removeBgV1 } = require("../utils/removebg");
-
 module.exports = async (req, res) => {
+  // CORS WAJIB
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // HANDLE PRE-FLIGHT
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      status: false,
+      message: "POST only"
+    });
+  }
+
   try {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, GET");
+    const chunks = [];
 
-    // ======================
-    // MODE 1: URL IMAGE
-    // ======================
-    if (req.method === "GET") {
-      const { url } = req.query;
+    req.on("data", chunk => chunks.push(chunk));
 
-      if (!url) {
+    req.on("end", async () => {
+      const buffer = Buffer.concat(chunks);
+
+      if (!buffer.length) {
         return res.status(400).json({
           status: false,
-          message: "url required"
+          message: "no image"
         });
       }
 
-      const { data: img } = await axios.get(url, {
-        responseType: "arraybuffer",
-        timeout: 15000
-      });
-
-      const result = await removeBgV1(Buffer.from(img));
+      const { removeBgV1 } = require("../utils/removebg");
+      const result = await removeBgV1(buffer);
 
       return res.status(200).json({
         status: true,
-        mode: "url",
         result
       });
-    }
-
-    // ======================
-    // MODE 2: UPLOAD / BUFFER
-    // ======================
-    if (req.method === "POST") {
-      const chunks = [];
-
-      req.on("data", chunk => chunks.push(chunk));
-
-      req.on("end", async () => {
-        const buffer = Buffer.concat(chunks);
-
-        if (!buffer.length) {
-          return res.status(400).json({
-            status: false,
-            message: "no image uploaded"
-          });
-        }
-
-        const result = await removeBgV1(buffer);
-
-        if (!result) {
-          return res.status(500).json({
-            status: false,
-            message: "failed remove bg"
-          });
-        }
-
-        return res.status(200).json({
-          status: true,
-          mode: "upload",
-          result
-        });
-      });
-
-      return;
-    }
-
-    return res.status(405).json({
-      status: false,
-      message: "method not allowed"
     });
+
+  } catch (e) {
+    return res.status(500).json({
+      status: false,
+      message: e.message
+    });
+  }
+};    });
 
   } catch (e) {
     return res.status(500).json({
