@@ -1,15 +1,10 @@
+const cors = require("../../utils/cors");
 const { mediafire } = require("../../utils/mediafire");
 
 module.exports = async (req, res) => {
   try {
-    // 🔥 CORS WAJIB
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      return res.status(200).end();
-    }
+    // 🔥 GLOBAL CORS
+    if (cors(req, res)) return;
 
     if (req.method !== "GET") {
       return res.status(405).json({
