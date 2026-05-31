@@ -1,20 +1,23 @@
 const { tiktokDl } = require("../../utils/tiktok");
 
 module.exports = async (req, res) => {
-  // 🔥 FORCED CORS (PASTI KELUAR)
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "GET") {
-    return res.status(405).json({ status: false });
-  }
-
   try {
+    // 🔥 CORS langsung di endpoint (simple & pasti jalan)
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
+
+    if (req.method !== "GET") {
+      return res.status(405).json({
+        status: false,
+        message: "GET only"
+      });
+    }
+
     const { url } = req.query;
 
     if (!url) {
