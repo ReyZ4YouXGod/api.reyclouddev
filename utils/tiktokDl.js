@@ -2,79 +2,86 @@ const axios = require("axios");
 
 async function tiktokDl(url) {
   try {
-    const formatNumber = (n) =>
-      Number(parseInt(n || 0)).toLocaleString("id-ID");
-
-    const formatDate = (n) =>
-      new Date(n * 1000).toLocaleString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-
-    const { data } = await axios.post(
-      "https://www.tikwm.com/api/",
-      {},
-      {
-        params: {
-          url,
-          hd: 1,
-        },
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/116 Safari/537.36",
-        },
+    const res = await axios.get("https://www.tikwm.com/api/", {
+      params: {
+        url,
+        hd: 1
+      },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/116 Safari/537.36"
       }
-    );
+    });
 
-    const res = data?.data;
-    if (!res) throw new Error("Gagal ambil data TikTok");
+    const data = res.data?.data;
+    if (!data) throw new Error("Data TikTok tidak ditemukan");
 
-    let media = [];
-
-    if (res.duration === 0) {
-      media = (res.images || []).map((v) => ({
-        type: "photo",
-        url: v,
-      }));
-    } else {
-      media = [
-        {
-          type: "watermark",
-          url: "https://www.tikwm.com" + (res.wmplay || ""),
-        },
-        {
-          type: "nowatermark",
-          url: "https://www.tikwm.com" + (res.play || ""),
-        },
-        {
-          type: "hd",
-          url: "https://www.tikwm.com" + (res.hdplay || ""),
-        },
-      ];
-    }
+    const isImage = data.duration === 0;
 
     return {
       status: true,
-      title: res.title,
-      taken_at: formatDate(res.create_time),
-      region: res.region,
-      id: res.id,
-      duration: res.duration + " Seconds",
-      cover: "https://www.tikwm.com" + res.cover,
 
-      stats: {
-        views: formatNumber(res.play_count),
-        likes: formatNumber(res.digg_count),
-        comment: formatNumber(res.comment_count),
-        share: formatNumber(res.share_count),
-        download: formatNumber(res.download_count),
+      title: data.title || "-",
+
+      author: {
+        id: data.author?.id,
+        username: data.author?.unique_id,
+        nickname: data.author?.nickname,
+        avatar: data.author?.avatar
+          ? "https://www.tikwm.com" + data.author.avatar
+          : null
       },
 
+      stats: {
+        views: Number(data.play_count || 0).toLocaleString("id-ID"),
+        likes: Number(data.digg_count || 0).toLocaleString("id-ID"),
+        comment: Number(data.comment_count || 0).toLocaleString("id-ID"),
+        share: Number(data.share_count || 0).toLocaleString("id-ID")
+      },
+
+      cover: data.cover
+        ? "https://www.tikwm.com" + data.cover
+        : null,
+
+      media: isImage
+        ? (data.images || []).map((v) => ({
+            type: "photo",
+            url: v
+          }))
+        : [
+            {
+              type: "watermark",
+              url: "https://www.tikwm.com" + (data.wmplay || "")
+            },
+            {
+              type: "nowatermark",
+              url: "https://www.tikwm.com" + (data.play || "")
+            },
+            {
+              type: "hd",
+              url: "https://www.tikwm.com" + (data.hdplay || "")
+            }
+          ],
+
+      music: {
+        title: data.music_info?.title || "-",
+        author: data.music_info?.author || "-",
+        url:
+          data.music ||
+          data.music_info?.play ||
+          null
+      }
+    };
+
+  } catch (e) {
+    return {
+      status: false,
+      message: e.message
+    };
+  }
+}
+
+module.exports = { tiktokDl };
       author: {
         id: res.author?.id,
         username: res.author?.unique_id,
