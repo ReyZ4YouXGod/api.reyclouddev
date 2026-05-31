@@ -1,11 +1,12 @@
 const { tiktokDl } = require("../utils/tiktok");
 
 module.exports = async (req, res) => {
+  // CORS GLOBAL
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "GET") return res.status(405).json({ status: false });
 
   try {
     const { url } = req.query;
@@ -13,15 +14,15 @@ module.exports = async (req, res) => {
     if (!url) {
       return res.status(400).json({
         status: false,
-        message: "url wajib"
+        message: "url required"
       });
     }
 
-    const result = await tiktokDl(url);
+    const data = await tiktokDl(url);
 
     return res.status(200).json({
       status: true,
-      result
+      result: data
     });
 
   } catch (e) {
