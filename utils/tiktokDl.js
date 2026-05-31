@@ -1,80 +1,47 @@
 const axios = require("axios");
 
 async function tiktokDl(url) {
-  try {
-    let data = [];
+  const domain = "https://www.tikwm.com/api/";
 
-    function formatNumber(integer) {
-      let numb = parseInt(integer);
-      return Number(numb).toLocaleString().replace(/,/g, ".");
-    }
+  const { data } = await axios.get(domain, {
+    params: { url, hd: 1 }
+  });
 
-    function formatDate(n, locale = "id-ID") {
-      let d = new Date(n * 1000);
-      return d.toLocaleDateString(locale, {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        second: "numeric",
-      });
-    }
+  const res = data.data;
 
-    const res = (
-      await axios.post(
-        "https://www.tikwm.com/api/",
-        {},
-        {
-          params: {
-            url,
-            count: 12,
-            cursor: 0,
-            web: 1,
-            hd: 1,
-          },
-          timeout: 15000,
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Linux; Android 10) Chrome/116 Mobile Safari/537.36",
-            Referer: "https://www.tikwm.com/",
-          },
-        }
-      )
-    ).data.data;
+  let result = {
+    title: res.title,
+    author: res.author?.nickname,
+    cover: "https://www.tikwm.com" + res.cover,
+    data: []
+  };
 
-    if (!res) throw new Error("Data kosong dari API");
+  if (res.duration === 0) {
+    result.data = res.images.map(v => ({
+      type: "photo",
+      url: v
+    }));
+  } else {
+    result.data.push(
+      {
+        type: "watermark",
+        url: "https://www.tikwm.com" + res.wmplay
+      },
+      {
+        type: "nowatermark",
+        url: "https://www.tikwm.com" + res.play
+      },
+      {
+        type: "hd",
+        url: "https://www.tikwm.com" + res.hdplay
+      }
+    );
+  }
 
-    // PHOTO
-    if (res.duration === 0) {
-      res.images?.forEach((v) => {
-        data.push({ type: "photo", url: v });
-      });
-    } else {
-      data.push(
-        {
-          type: "watermark",
-          url: "https://www.tikwm.com" + (res.wmplay || ""),
-        },
-        {
-          type: "nowatermark",
-          url: "https://www.tikwm.com" + (res.play || ""),
-        },
-        {
-          type: "nowatermark_hd",
-          url: "https://www.tikwm.com" + (res.hdplay || ""),
-        }
-      );
-    }
+  return result;
+}
 
-    return {
-      status: true,
-      title: res.title,
-      taken_at: formatDate(res.create_time),
-      region: res.region,
-      id: res.id,
-      duration: res.duration + " Seconds",
+module.exports = { tiktokDl };      duration: res.duration + " Seconds",
       cover: "https://www.tikwm.com" + res.cover,
 
       data,
