@@ -1,31 +1,21 @@
-const { tiktokDl } = require("../utils/tiktokDl");
+const cors = require("../../utils/cors");
+const { tiktokDl } = require("../../utils/tiktok");
 
 module.exports = async (req, res) => {
   try {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-
-    if (req.method !== "GET") {
-      return res.status(405).json({
-        status: false,
-        message: "Method not allowed"
-      });
-    }
+    if (cors(req, res)) return;
 
     const { url } = req.query;
 
     if (!url) {
-      return res.status(400).json({
-        status: false,
-        message: "url wajib"
-      });
+      return res.status(400).json({ status: false, message: "url wajib" });
     }
 
-    const result = await tiktokDl(url);
+    const data = await tiktokDl(url);
 
     return res.status(200).json({
       status: true,
-      creator: "reyy",
-      result
+      result: data
     });
 
   } catch (e) {
