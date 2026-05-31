@@ -1,23 +1,17 @@
-const { tiktokDl } = require("../../utils/tiktok");
+const { detect } = require("../utils/detect");
+const { tiktokDl } = require("../utils/tiktok");
+const { igDl } = require("../utils/instagram");
+const { mediafire } = require("../utils/mediafire");
 
 module.exports = async (req, res) => {
+  // optional CORS (aman untuk browser)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "GET") return res.status(405).json({ status: false });
+
   try {
-    // 🔥 CORS langsung di endpoint (simple & pasti jalan)
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      return res.status(200).end();
-    }
-
-    if (req.method !== "GET") {
-      return res.status(405).json({
-        status: false,
-        message: "GET only"
-      });
-    }
-
     const { url } = req.query;
 
     if (!url) {
@@ -27,10 +21,24 @@ module.exports = async (req, res) => {
       });
     }
 
-    const result = await tiktokDl(url);
+    const type = detect(url);
+
+    if (!type) {
+      return res.status(400).json({
+        status: false,
+        message: "platform tidak didukung"
+      });
+    }
+
+    let result;
+
+    if (type === "tiktok") result = await tiktokDl(url);
+    if (type === "instagram") result = await igDl(url);
+    if (type === "mediafire") result = await mediafire(url);
 
     return res.status(200).json({
       status: true,
+      type,
       result
     });
 
