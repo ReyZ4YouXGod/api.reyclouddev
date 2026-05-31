@@ -1,12 +1,15 @@
 {
   "version": 2,
   "builds": [
-    { "src": "download/**/*.js", "use": "@vercel/node" }
-  ],
-  "rewrites": [
     {
-      "source": "/download/tiktok",
-      "destination": "/download/tiktok.js"
+      "src": "download/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/download/(.*)",
+      "dest": "/download/$1.js"
     }
   ]
 }
