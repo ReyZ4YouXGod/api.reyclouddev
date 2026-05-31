@@ -1,18 +1,27 @@
-const cors = require("../../utils/cors");
 const { tiktokDl } = require("../../utils/tiktok");
 
 module.exports = async (req, res) => {
+  // 🔥 FORCED CORS (PASTI KELUAR)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "GET") {
+    return res.status(405).json({ status: false });
+  }
+
   try {
-    if (cors(req, res)) return;
-
-    if (req.method !== "GET") {
-      return res.status(405).json({ status: false });
-    }
-
     const { url } = req.query;
 
     if (!url) {
-      return res.status(400).json({ status: false, message: "url wajib" });
+      return res.status(400).json({
+        status: false,
+        message: "url wajib"
+      });
     }
 
     const result = await tiktokDl(url);
